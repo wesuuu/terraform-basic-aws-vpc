@@ -107,6 +107,16 @@ variable "gateways" {
 
 }
 
+variable "extra_gateways" {
+  type = list(object({
+    name                  = string
+    type                  = string
+    associate_with_subnet = string
+  }))
+  description = "Extra gateways"
+  default     = []
+}
+
 
 variable "route_tables" {
   type = list(object({
@@ -198,6 +208,15 @@ variable "nacls" {
       associate_with_subnet = "private-subnet-1"
     }
   ]
+}
+
+variable "extra_nacls" {
+  type = list(object({
+    name                  = string
+    associate_with_subnet = string
+  }))
+  description = "Extra NACLs"
+  default     = []
 }
 
 variable "nacl_rules" {
@@ -292,4 +311,20 @@ variable "nacl_rules" {
       to_port             = 65535
     }
   ]
+}
+
+variable "extra_nacl_rules" {
+  type = list(object({
+    name                = string
+    rule_type           = string
+    associate_with_nacl = string
+    protocol            = string
+    rule_no             = string
+    action              = string
+    cidr_block          = string
+    from_port           = string
+    to_port             = string
+  }))
+  description = "Extra NACL rules"
+  default     = []
 }

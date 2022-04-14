@@ -13,11 +13,13 @@ locals {
   all_route_tables      = concat(var.route_tables, var.extra_route_tables)
   all_route_table_rules = concat(var.route_table_rules, var.extra_route_table_rules)
 
-  internet_gateways = [for gateway in var.gateways : gateway if gateway.type == "internet"]
-  nat_gateways      = [for gateway in var.gateways : gateway if gateway.type == "nat"]
+  all_gateways = concat(var.gateways, var.extra_gateways)
 
-  all_nacls      = var.nacls
-  all_nacl_rules = var.nacl_rules
+  internet_gateways = [for gateway in local.all_gateways : gateway if gateway.type == "internet"]
+  nat_gateways      = [for gateway in local.all_gateways : gateway if gateway.type == "nat"]
+
+  all_nacls      = concat(var.nacls, var.extra_nacls)
+  all_nacl_rules = concat(var.nacl_rules, var.extra_nacl_rules)
 }
 
 data "aws_availability_zones" "available" {}
