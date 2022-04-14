@@ -41,7 +41,7 @@ resource "aws_vpc" "main" {
   var.vpc)
 }
 
-resource "aws_subnet" "public" {
+resource "aws_subnet" "subnets" {
   for_each          = { for subnet in local.all_subnets : subnet.name => subnet }
   vpc_id            = aws_vpc.main.id
   cidr_block        = each.value.cidr_block
@@ -76,11 +76,11 @@ resource "aws_eip" "nat_ips" {
   vpc      = true
 }
 
-resource "aws_nat_gateway" "nat_gateway" {
+resource "aws_nat_gateway" "nat_gateways" {
   for_each = { for gateway in local.nat_gateways : gateway.name => gateway }
 
   allocation_id = aws_eip.nat_ips[each.value.name].id
-  subnet_id     = aws_subnet.public[each.value.associate_with_subnet].id
+  subnet_id     = aws_subnet.subnets[each.value.associate_with_subnet].id
 
   tags = merge(
     var.project_tags,
@@ -102,7 +102,7 @@ resource "aws_route_table" "route_tables" {
     content {
       cidr_block     = route.value.cidr_block
       gateway_id     = route.value.gateway_type == "internet" ? aws_internet_gateway.internet[route.value.associate_with_gateway].id : null
-      nat_gateway_id = route.value.gateway_type == "nat" ? aws_nat_gateway.nat_gateway[route.value.associate_with_gateway].id : null
+      nat_gateway_id = route.value.gateway_type == "nat" ? aws_nat_gateway.nat_gateways[route.value.associate_with_gateway].id : null
     }
   }
 
@@ -115,9 +115,9 @@ resource "aws_route_table" "route_tables" {
 }
 
 
-resource "aws_route_table_association" "public" {
+resource "aws_route_table_association" "route_table_association" {
   for_each       = { for route_table in local.all_route_tables : route_table.name => route_table }
-  subnet_id      = aws_subnet.public[each.value.associate_with_subnet].id
+  subnet_id      = aws_subnet.subnets[each.value.associate_with_subnet].id
   route_table_id = aws_route_table.route_tables[each.value.name].id
 }
 
@@ -171,5 +171,5 @@ resource "aws_network_acl" "nacls" {
 resource "aws_network_acl_association" "nacl_association" {
   for_each       = { for nacl in local.all_nacls : nacl.name => nacl }
   network_acl_id = aws_network_acl.nacls[each.value.name].id
-  subnet_id      = aws_subnet.public[each.value.associate_with_subnet].id
+  subnet_id      = aws_subnet.subnets[each.value.associate_with_subnet].id
 }
