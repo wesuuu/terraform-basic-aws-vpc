@@ -22,13 +22,6 @@ locals {
   all_nacl_rules = concat(var.nacl_rules, var.extra_nacl_rules)
 }
 
-data "aws_availability_zones" "available" {}
-
-data "aws_availability_zone" "available" {
-  for_each = toset(data.aws_availability_zones.available.names)
-  name     = each.value
-}
-
 resource "aws_vpc" "main" {
   cidr_block                     = var.vpc["cidr_block"]
   enable_dns_hostnames           = true
