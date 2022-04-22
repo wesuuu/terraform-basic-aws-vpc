@@ -7,6 +7,11 @@ terraform {
   }
 }
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+
 locals {
   all_subnets = concat(var.subnets, var.extra_subnets)
 
@@ -40,7 +45,7 @@ resource "aws_subnet" "subnets" {
   for_each          = { for subnet in local.all_subnets : subnet.name => subnet }
   vpc_id            = aws_vpc.main.id
   cidr_block        = each.value.cidr_block
-  availability_zone = each.value.availability_zone
+  availability_zone = coalesce(each.value.availability_zone, data.aws_availability_zones.available.names[0])
 
   tags = merge(
     var.project_tags,
@@ -94,6 +99,7 @@ resource "aws_route_table" "route_tables" {
 
   dynamic "route" {
     for_each = { for rule in local.all_route_table_rules : rule.name => rule if rule.associate_with_route_table == each.value.name }
+
     content {
       cidr_block     = route.value.cidr_block
       gateway_id     = route.value.gateway_type == "internet" ? aws_internet_gateway.internet[route.value.associate_with_gateway].id : null
@@ -135,7 +141,10 @@ resource "aws_network_acl" "nacls" {
   }
 
   dynamic "ingress" {
-    for_each = { for rule in local.all_nacl_rules : rule.name => rule if rule.rule_type == "ingress" && rule.associate_with_nacl == each.value.name }
+    for_each = {
+      for rule in local.all_nacl_rules :
+      rule.name => rule if rule.rule_type == "ingress" && rule.associate_with_nacl == each.value.name
+    }
     content {
       protocol   = ingress.value.protocol
       rule_no    = ingress.value.rule_no

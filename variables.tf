@@ -14,7 +14,9 @@ variable "ssh_ip_range" {
   }
 
   validation {
-    condition     = length([for elem in split(".", split("/", var.ssh_ip_range)[0]) : tonumber(elem)]) == 4
+    condition = length(
+      [for elem in split(".", split("/", var.ssh_ip_range)[0]) : tonumber(elem)]
+    ) == 4
     error_message = "IP part of cidr range must consists of integers."
   }
 }
@@ -54,14 +56,14 @@ variable "subnets" {
       description       = "First public subnet",
       cidr_block        = "10.0.1.0/24",
       type              = "public",
-      availability_zone = "us-west-1a"
+      availability_zone = null
     },
     {
       name              = "private-subnet-1",
       description       = "first private subnet",
       cidr_block        = "10.0.2.0/24",
       type              = "private",
-      availability_zone = "us-west-1c"
+      availability_zone = null
     }
   ]
 }
@@ -101,8 +103,11 @@ variable "gateways" {
 
   validation {
     # check type
-    condition     = length([for gateway in var.gateways : true if gateway.type == "nat" || gateway.type == "internet"]) == length(var.gateways)
-    error_message = "Only two gateways types--'nat' or 'internet'--are allowed for this current version."
+    condition = length(
+      [for gateway in var.gateways : true
+      if gateway.type == "nat" || gateway.type == "internet"]
+    ) == length(var.gateways)
+    error_message = "Only two gateways types--'nat' or'internet'--are allowed."
   }
 
 }
