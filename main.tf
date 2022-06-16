@@ -42,10 +42,16 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "subnets" {
-  for_each          = { for subnet in local.all_subnets : subnet.name => subnet }
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = each.value.cidr_block
-  availability_zone = coalesce(each.value.availability_zone, data.aws_availability_zones.available.names[0])
+  for_each = { for subnet in local.all_subnets : subnet.name => subnet }
+
+  vpc_id     = aws_vpc.main.id
+  cidr_block = each.value.cidr_block
+
+  // select either defined az or the next az in the list
+  availability_zone = coalesce(
+    each.value.availability_zone,
+    data.aws_availability_zones.available.names[index(local.all_subnets, each.value)]
+  )
 
   tags = merge(
     var.project_tags,
